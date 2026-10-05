@@ -1,99 +1,309 @@
-# Data Dictionary
+# Product Analytics Case Study
 
-> **Synthetic data disclaimer:** All data in this project is randomly
-> generated with a fixed random seed (`config.RANDOM_SEED = 42`). No real
-> users, events, or company data are represented. Values are constructed
-> to be internally consistent and behaviourally realistic (funnels,
-> retention patterns, experiment uplift) so the dataset can support a
-> credible end-to-end product analytics case study, but they do not
-> describe any real mobility app. The dataset is designed purely for
-> **portfolio demonstration** purposes.
+## User Retention, Funnel Analytics, Feature Adoption & A/B Testing
 
-## Files
+An end-to-end Product Analytics portfolio project that simulates a real-world European mobility platform and demonstrates how behavioural event data can be transformed into actionable business decisions using **Python, SQL, SQLite, statistical analysis, exploratory data analysis, and Power BI dashboards**.
 
-| File | Location | Approx. rows | Grain |
-|---|---|---|---|
-| `users.csv` | `data/raw/` | ~5,000 | one row per user |
-| `events.csv` | `data/raw/` | ~120,000–180,000 | one row per event |
-| `experiments.csv` | `data/raw/` | ~5,000 | one row per user |
+The project follows a complete analytics workflow similar to modern product organisations, covering data generation, validation, SQL analytics, exploratory data analysis, experimentation, dashboard development, and executive-level business recommendations.
 
----
+The analysis focuses on:
 
-## `users.csv`
+- User activation and conversion
+- Product funnel performance and drop-off
+- Day 1, Day 7, and Day 30 retention
+- Monthly cohort behaviour
+- Feature adoption
+- Customer segmentation
+- A/B testing
+- Executive business recommendations
 
-| Column | Type | Description |
-|---|---|---|
-| `user_id` | string | Unique user identifier, e.g. `U00001`. |
-| `signup_date` | date | Date the user created their account. |
-| `country` | category | User's country: `Germany`, `Austria`, `Spain`, `Netherlands`, `France`. |
-| `city` | category | User's city, consistent with `country`. |
-| `platform` | category | Primary app platform: `iOS`, `Android`, `Web`. |
-| `acquisition_channel` | category | How the user was acquired: `Organic`, `Paid Search`, `Paid Social`, `Referral`, `Partnership`, `Direct`. |
-| `age_group` | category | Self-reported age band: `18-24`, `25-34`, `35-44`, `45-54`, `55+`. ~3% missing (declined to state). |
-| `experiment_group` | category | Assignment for the `simplified_booking_flow` A/B test: `control` or `treatment`. |
-| `first_device_type` | category | Device type used at signup (usually matches `platform`, with some Web-via-mobile-browser variation). |
-
-## `events.csv`
-
-| Column | Type | Description |
-|---|---|---|
-| `event_id` | string | Unique event identifier, e.g. `EVT00000001`. |
-| `user_id` | string | Foreign key to `users.csv`. |
-| `event_time` | datetime | Full timestamp of the event. Always on/after the user's `signup_date`. |
-| `event_date` | date | Date part of `event_time`, for convenient daily aggregation. |
-| `session_id` | string | Identifies events belonging to the same app session, e.g. `U00001_S001`. |
-| `event_name` | category | See **Event taxonomy** below. |
-| `product_area` | category | `Onboarding`, `Search`, `Booking`, `Payments`, `Engagement`, `Support`. Derived from `event_name`. |
-| `device_type` | category | Device used for this specific event: `iOS`, `Android`, `Web`. |
-| `revenue` | float, nullable | Booking value in EUR. **Only populated for `booking_completed` events**; null everywhere else. |
-| `ride_distance_km` | float, nullable | Estimated ride distance. Populated only for `booking_started`, `booking_completed`, and `booking_cancelled` events. |
-| `payment_method` | category, nullable | `Card`, `PayPal`, `Apple Pay`, `Google Pay`, `Cash`, `None`. Populated only for `booking_completed` and `payment_failed` events. |
-
-### Event taxonomy
-
-| `event_name` | `product_area` | Notes |
-|---|---|---|
-| `app_open` | Engagement | First event of every session. |
-| `signup_completed` | Onboarding | Fires once, in the user's first session. |
-| `location_permission_granted` | Onboarding | Mostly occurs in the first 1–2 sessions. |
-| `search_started` | Search | Start of a ride search. |
-| `search_completed` | Search | Search returned results. |
-| `ride_option_viewed` | Search | User viewed a specific ride option. |
-| `promo_viewed` | Engagement | User viewed a promotional banner/offer. |
-| `booking_started` | Booking | User began booking a ride. Always preceded by `search_started`/`search_completed` in the same session. |
-| `booking_completed` | Booking | Ride successfully booked. Always preceded by `booking_started` in the same session. Only event with revenue. |
-| `booking_cancelled` | Booking | Booking was abandoned/cancelled before payment. No revenue. |
-| `favourite_location_added` | Engagement | One-time "sticky" engagement action. |
-| `notification_enabled` | Engagement | One-time "sticky" engagement action. |
-| `support_contacted` | Support | User contacted support (more likely after a `payment_failed`). |
-| `payment_failed` | Payments | Payment attempt failed after `booking_started`. No revenue. |
-| `rating_submitted` | Engagement | Optional post-booking rating, only after `booking_completed`. |
-
-## `experiments.csv`
-
-| Column | Type | Description |
-|---|---|---|
-| `user_id` | string | Foreign key to `users.csv`. |
-| `experiment_name` | string | Always `simplified_booking_flow` in this dataset. |
-| `experiment_group` | category | `control` or `treatment`; always matches `users.experiment_group`. |
-| `exposure_date` | date | Date the user was exposed to the experiment (equal to `signup_date` — assignment happens at signup). |
-| `converted` | boolean | `True` if the user has at least one `booking_completed` event. |
-| `conversion_date` | date, nullable | Date of the user's first `booking_completed` event. Null if not converted. |
-| `days_to_conversion` | int, nullable | Days between `exposure_date` and `conversion_date`. Null if not converted. |
+> **Note:** All datasets are synthetic and contain no personally identifiable information.
 
 ---
 
-## Metric definitions
+## Project Preview
 
-These definitions are the intended basis for later analysis phases (not yet computed in Phase 1):
+<table>
+<tr>
+<td width="50%">
+<img src="images/33_executive_kpi_tiles.png" alt="Executive KPI Dashboard">
+</td>
+<td width="50%">
+<img src="images/23_conversion_funnel.png" alt="Conversion Funnel">
+</td>
+</tr>
 
-- **Activation** — a user completes at least one `search_completed` and one `booking_completed` event within 7 days of `signup_date`.
-- **Conversion** — a user completes at least one `booking_completed` event (see `experiments.converted`).
-- **Retention** — user activity (any event) measured at Day 1, Day 7, and Day 30 after `signup_date`.
-- **Churn** — no user activity for at least 30 consecutive days following the user's last recorded event.
+<tr>
+<td width="50%">
+<img src="images/21_cohort_retention_heatmap.png" alt="Cohort Retention Heatmap">
+</td>
+<td width="50%">
+<img src="images/32_experiment_dashboard.png" alt="A/B Testing Dashboard">
+</td>
+</tr>
+</table>
 
-## Known modelling assumptions
+---
 
-- Sticky engagement actions (`notification_enabled`, `favourite_location_added`) and longer retention are both driven by a shared per-user latent "engagement" propensity, rather than one directly causing the other — this mirrors how these correlations usually arise in real product data.
-- The `simplified_booking_flow` experiment is modelled as reducing cancellations/failed payments *after* a booking is started (i.e. it improves booking completion rate), not the top-of-funnel search rate.
-- `Paid Search` acquisition drives more search activity but comparatively lower booking conversion; `Referral` drives less search volume but higher conversion — reflecting different user intent by channel.
+## Project Snapshot
+
+| Metric | Result |
+|---|---:|
+| Users | 5,000 |
+| Behavioural Events | 141,813 |
+| Completed Bookings | 2,731 |
+| Total Simulated Revenue | €39,589.80 |
+| Data Period | January 2024 – June 2025 |
+| Validation Checks | 23 Passed |
+| Automated Tests | 25 Passed |
+| Control Conversion Rate | 26.9% |
+| Treatment Conversion Rate | 30.5% |
+| Experiment Uplift | +3.6 Percentage Points |
+
+---
+
+## Business Problem
+
+A fictional European mobility platform wants to answer the following business questions:
+
+1. Where do users abandon the booking funnel?
+2. Which acquisition channels deliver the highest-quality users?
+3. Which platforms perform best?
+4. Which product features improve retention?
+5. How does user behaviour evolve across cohorts?
+6. Does a simplified booking flow improve conversion?
+7. Which product initiatives should be prioritised?
+
+---
+
+## Key Findings
+
+### Acquisition Quality
+
+Referral users produced the highest-quality traffic.
+
+- ~40.0% conversion
+- ~10.9% activation within seven days
+
+Paid Search produced substantially weaker users.
+
+- ~23.5% conversion
+- ~5.0% activation
+
+**Business Insight**
+
+Acquisition volume alone should never determine marketing investment. Referral users consistently generated higher downstream business value.
+
+---
+
+### Platform Performance
+
+Conversion rates:
+
+- iOS ≈ 30.0%
+- Android ≈ 28.8%
+- Web ≈ 24.0%
+
+**Business Insight**
+
+The Web booking journey should be prioritised for UX investigation and optimisation.
+
+---
+
+### Feature Adoption
+
+Users enabling notifications and favourite locations demonstrated longer engagement.
+
+**Business Insight**
+
+The relationship is observational rather than causal and should be validated through controlled experimentation.
+
+---
+
+### Experiment Performance
+
+The **simplified_booking_flow** experiment increased conversion from **26.9%** to **30.5%**, representing an uplift of approximately **3.6 percentage points**.
+
+The analysis includes:
+
+- Statistical significance testing
+- 95% confidence intervals
+- Revenue comparison
+- Booking-rate comparison
+
+---
+
+## Exploratory Data Analysis (Phase 3)
+
+Phase 3 extends the SQL analytics layer with a production-style Python exploratory analysis workflow consisting of six dedicated notebooks.
+
+The notebooks analyse the raw behavioural datasets using:
+
+- Pandas
+- NumPy
+- Matplotlib
+- Seaborn
+- SciPy
+
+Each notebook follows a consistent analytical workflow:
+
+> **Business Question → Analysis → Visualisation → Business Insight → Recommendation**
+
+### Notebooks
+
+| Notebook | Description |
+|---|---|
+| `01_data_overview.ipynb` | Dataset overview, schema validation, descriptive statistics, and correlation analysis |
+| `02_user_behaviour.ipynb` | User segmentation by country, platform, acquisition channel, age group, and device |
+| `03_retention_analysis.ipynb` | D1, D7, D30 retention, cohort analysis, retention curves, and heatmaps |
+| `04_funnel_analysis.ipynb` | Funnel conversion, abandonment analysis, and optimisation opportunities |
+| `05_ab_testing.ipynb` | Experiment evaluation using confidence intervals and statistical significance testing |
+| `06_executive_summary.ipynb` | Executive KPI summary and prioritised business recommendations |
+
+Every key figure is automatically exported as a standalone PNG into the `images/` folder.
+
+---
+
+## Power BI Dashboard (Phase 4)
+
+The project also includes a multi-page Power BI dashboard designed for executive reporting.
+
+Dashboard pages include:
+
+- Executive Overview
+- User Behaviour
+- Product Funnel
+- Retention Analysis
+- Experiment Analysis
+- Executive Recommendations
+
+The dashboard combines KPI cards, interactive visualisations, funnel metrics, retention insights, and executive-level business recommendations to simulate reporting used by modern product organisations.
+
+---
+
+## Business Recommendations
+
+1. Optimise the Web booking journey.
+2. Scale Referral acquisition while monitoring user quality.
+3. Improve Paid Search targeting and landing pages.
+4. Increase feature adoption through contextual prompts.
+5. Continue monitoring the booking-flow experiment before full rollout.
+6. Monitor KPIs by platform and acquisition channel.
+7. Validate behavioural insights through future experiments.
+
+Detailed findings are available in:
+
+- [`insights/phase2_summary.md`](insights/phase2_summary.md)
+- [`notebooks/`](notebooks)
+
+---
+
+## Technical Stack
+
+### Programming & Analytics
+
+- Python
+- SQL
+- SQLite
+- Pandas
+- NumPy
+- SciPy
+
+### Data Visualisation
+
+- Matplotlib
+- Seaborn
+- Power BI
+
+### Product Analytics
+
+- KPI Reporting
+- Funnel Analysis
+- Cohort Analysis
+- Retention Analysis
+- Customer Segmentation
+- Feature Adoption
+- A/B Testing
+- Statistical Significance Testing
+
+### Engineering & Quality
+
+- Automated Data Validation
+- Pytest
+- Git
+- GitHub
+
+---
+
+## Repository Structure
+
+```text
+product-analytics-retention/
+├── README.md
+├── requirements.txt
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── README.md
+├── src/
+│   ├── generate_data.py
+│   ├── validate_data.py
+│   ├── build_database.py
+│   ├── run_sql.py
+│   └── eda_utils.py
+├── sql/
+├── notebooks/
+├── images/
+├── insights/
+├── dashboard/
+└── tests/
+```
+
+---
+
+## Future Improvements
+
+- Interactive Power BI dashboard with drill-through
+- Executive presentation deck
+- Product KPI monitoring dashboard
+- Additional A/B testing case studies
+- Cloud Data Warehouse integration (BigQuery / Snowflake)
+- Product Analytics technical blog
+
+---
+
+## Key Skills Demonstrated
+
+- Product Analytics
+- Business Analytics
+- SQL
+- Python
+- Exploratory Data Analysis (EDA)
+- Power BI
+- Dashboard Design
+- Data Validation
+- KPI Reporting
+- Funnel Analysis
+- Cohort Analysis
+- Retention Analysis
+- Customer Segmentation
+- A/B Testing
+- Statistical Analysis
+- Business Storytelling
+- Executive Reporting
+
+---
+
+## Author
+
+**Sara Hosseini**
+
+**Business & Data Analyst**
+
+Berlin, Germany
+
+- **LinkedIn:** https://www.linkedin.com/in/sara-hosseini-analyst/
+- **GitHub:** github.com/Sara-Hosseini
+- **Email:** sarahosseinigh@gmail.com
+
+Feel free to explore the project, provide feedback, or connect with me.
