@@ -1,0 +1,36 @@
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Power BI temporary files
+*.pbix.tmp
+~$*.pbix
+*.pbix.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Processed/intermediate outputs (regenerable, not the portfolio datasets)
+data/processed/*
+!data/processed/.gitkeep
+
+# NOTE: data/raw/*.csv (users.csv, events.csv, experiments.csv) are
+# intentionally NOT ignored — they are the portfolio deliverable and are
+# small enough to keep in the repository.
